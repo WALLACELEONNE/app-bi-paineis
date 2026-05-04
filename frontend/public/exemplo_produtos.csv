@@ -1,0 +1,6 @@
+codigo,nome,tipo,unidade,cultura
+SOJA-001,Soja Grão Tipo 1,grao,sc,soja
+MILHO-001,Milho Grão,grao,sc,milho
+TRIGO-001,Trigo Grão,grao,sc,trigo
+SOJA-002,Soja Semente,insumo,kg,soja
+FERT-001,Fertilizante NPK,insumo,ton,
