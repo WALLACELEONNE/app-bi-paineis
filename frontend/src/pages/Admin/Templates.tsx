@@ -1,5 +1,22 @@
 import CrudTable from '../../components/common/CrudTable'
 
+const JSON_DEFAULT = `{
+  "colunas": [
+    {
+      "nome": "data",
+      "tipo": "date",
+      "obrigatorio": true
+    },
+    {
+      "nome": "valor",
+      "tipo": "float",
+      "obrigatorio": true
+    }
+  ],
+  "mapeamento": {},
+  "validacoes_customizadas": []
+}`
+
 export default function Templates() {
   return (
     <CrudTable
@@ -14,8 +31,10 @@ export default function Templates() {
         { name: 'tenant_id', label: 'Tenant ID', required: true },
         { name: 'departamento_id', label: 'Departamento ID', required: true },
         { name: 'nome', label: 'Nome', required: true },
-        { name: 'schema_json', label: 'Schema (JSON)' },
+        { name: 'json_schema', label: 'Schema (JSON)', type: 'code' },
       ]}
+      codeFields={['json_schema']}
+      defaultValues={{ json_schema: JSON_DEFAULT }}
     />
   )
 }

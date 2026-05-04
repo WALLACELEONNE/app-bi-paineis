@@ -1,5 +1,15 @@
 import CrudTable from '../../components/common/CrudTable'
 
+const YAML_DEFAULT = `pipeline_exemplo:
+  steps:
+    - validate:
+        regras: []
+    - transform:
+        - calcular:
+            nome: valor_calculado
+            formula: "credito - debito"
+`
+
 export default function Pipelines() {
   return (
     <CrudTable
@@ -15,8 +25,10 @@ export default function Pipelines() {
         { name: 'tenant_id', label: 'Tenant ID', required: true },
         { name: 'departamento_id', label: 'Departamento ID', required: true },
         { name: 'nome', label: 'Nome', required: true },
-        { name: 'config_yaml', label: 'Configuração (YAML)' },
+        { name: 'config_yaml', label: 'Configuração (YAML)', type: 'code' },
       ]}
+      codeFields={['config_yaml']}
+      defaultValues={{ config_yaml: YAML_DEFAULT }}
     />
   )
 }

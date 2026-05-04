@@ -1,0 +1,146 @@
+# =============================================================================
+# Pipeline: Tran426 → Clientes (Dados Mestres)
+# =============================================================================
+# Este YAML documenta o mapeamento (De-Para) do formato Tran426
+# (Ficha Cadastral do Cliente) para a tabela clientes_fornecedores.
+#
+# Uso: POST /api/v1/dados-mestres/import/clientes-fornecedores
+#       com o CSV convertido (colunas: tipo, razao_social, cnpj_cpf, ie)
+#
+# Para converter um XLSX Tran426 para CSV:
+#   1. Admin → Assistente De-Para → Upload do XLSX
+#   2. Mapeie as colunas manualmente (dropdown)
+#   3. Ou use o script Python abaixo para conversão automática
+# =============================================================================
+
+pipeline_tran426_clientes:
+  description: "Importação de clientes do formato Tran426 (Ficha Cadastral)"
+
+  # ── Mapeamento das colunas da planilha para campos do banco ──
+  de_para:
+    - source: "CODIGO DO CLIENTE"
+      target: "codigo_interno"
+      description: "Código legado do ERP"
+      tipo: "int"
+      obrigatorio: false
+
+    - source: "Tipo Jurídico <J> Pessoa Jurídica, ou <F>Pessoa Física"
+      target: "tipo"
+      description: "J → C (cliente PJ), F → C (cliente PF)"
+      tipo: "string"
+      obrigatorio: true
+      transform: "mapear_valor"
+      mapa:
+        "J": "C"
+        "F": "C"
+
+    - source: "Razão Social"
+      target: "razao_social"
+      description: "Nome ou razão social do cliente"
+      tipo: "string"
+      obrigatorio: true
+
+    - source: "Endereço"
+      target: "endereco"
+      description: "Logradouro"
+      tipo: "string"
+      obrigatorio: false
+
+    - source: "Bairro"
+      target: "bairro"
+      description: "Bairro"
+      tipo: "string"
+      obrigatorio: false
+
+    - source: "Descrição do Município"
+      target: "municipio"
+      description: "Cidade"
+      tipo: "string"
+      obrigatorio: false
+
+    - source: "Estado do município"
+      target: "uf"
+      description: "Sigla do estado"
+      tipo: "string"
+      obrigatorio: false
+
+    - source: "CEP"
+      target: "cep"
+      description: "CEP (apenas números)"
+      tipo: "string"
+      obrigatorio: false
+
+    - source: "Telefone 1"
+      target: "telefone"
+      description: "Telefone principal"
+      tipo: "string"
+      obrigatorio: false
+
+    - source: "e-mail do contato comercial"
+      target: "email"
+      description: "Email do contato comercial"
+      tipo: "string"
+      obrigatorio: false
+
+    - source: "CNPJ/CPF"
+      target: "cnpj_cpf"
+      description: "CPF (11 dígitos) ou CNPJ (14 dígitos)"
+      tipo: "string"
+      obrigatorio: true
+
+    - source: "Inscrição Estatual ou RG"
+      target: "ie"
+      description: "Inscrição Estadual ou RG"
+      tipo: "string"
+      obrigatorio: false
+
+    - source: "Naturaridade"
+      target: "naturalidade"
+      description: "Naturalidade do cliente PF"
+      tipo: "string"
+      obrigatorio: false
+
+    - source: "Data de Nascimento do cliente"
+      target: "data_nascimento"
+      description: "Data de nascimento (DD/MM/AAAA)"
+      tipo: "date"
+      obrigatorio: false
+
+  # ── Passos de validação ──
+  validate:
+    regras:
+      - campo: "cnpj_cpf"
+        regra: "regex"
+        valor: "^\\d{11}$|^\\d{14}$"
+        mensagem: "CNPJ/CPF deve ter 11 ou 14 dígitos"
+      - campo: "razao_social"
+        regra: "required"
+        mensagem: "Razão Social é obrigatória"
+
+  # ── Script Python para conversão automática XLSX → CSV ──
+  script_conversao: |
+    import csv, openpyxl
+
+    ARQUIVO_XLSX = "Tran426 - Ficha cadastral do cliente.xlsx"
+    ARQUIVO_CSV  = "clientes_convertidos.csv"
+
+    wb = openpyxl.load_workbook(ARQUIVO_XLSX, data_only=True)
+    ws = wb.active
+
+    with open(ARQUIVO_CSV, 'w', newline='', encoding='utf-8-sig') as f:
+        w = csv.writer(f)
+        w.writerow(['tipo', 'razao_social', 'cnpj_cpf', 'ie'])
+        for row in ws.iter_rows(min_row=2, values_only=True):
+            nome = row[2]
+            doc  = row[10]
+            ie   = row[11]
+            if not nome and not doc:
+                continue
+            tipo = 'C'
+            doc_str = str(int(doc)) if isinstance(doc, float) else str(doc or '')
+            ie_str  = str(int(ie)) if isinstance(ie, float) else str(ie or '')
+            w.writerow([tipo, str(nome)[:300], doc_str, ie_str[:20]])
+
+    print(f'Convertido. Importar com:')
+    print(f'  POST /api/v1/dados-mestres/import/clientes-fornecedores')
+    print(f'  Arquivo: {ARQUIVO_CSV}')
